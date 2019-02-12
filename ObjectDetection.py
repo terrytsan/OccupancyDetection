@@ -51,9 +51,6 @@ while (1):
 	# cv2.drawContours(foregroundMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE, color=(255,255,255))
 	#cv2.drawContours(frameThresh, contours, -1, (255, 255, 0), 3)
 	
-	
-	
-	
 	# This section is on displaying the frames
 	
 	# show the two frames side by side (appears to be a video)
