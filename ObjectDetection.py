@@ -1,26 +1,18 @@
 import cv2
 import numpy as np
 
+# constants
+video = "example_01.mp4"
+videoScaleFactor = 1
+
 # Load the video
-cap = cv2.VideoCapture("nt3D26lrkho.mp4")
+cap = cv2.VideoCapture(video)
 
-# # play the video
-# while cap.isOpened():
-# 	ret, frame = cap.read()
-# 	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-# 	cv2.imshow('Video frame', gray)
-#
-# 	if cv2.waitKey(1) == 13:
-# 		break;
-#
-# cap.release()
-# cv2.destroyAllWindows()
-
-# subtractor = cv2.bgsegm.createBackgroundSubtractorMOG()
-subtractor = cv2.createBackgroundSubtractorMOG2()
+# want to detect shadows so they can be thresholded
+subtractor = cv2.createBackgroundSubtractorMOG2(history=600, varThreshold=30, detectShadows=1)
 
 # This kernel will be used to remove noise
-kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
 
 # Counter for frames. Outputs the current frame number
 count = 0
@@ -28,48 +20,38 @@ count = 0
 while (1):
 	ret, frame = cap.read()
 	# resize frame
-	frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
-	# apply guassian blur
-	frame = cv2.GaussianBlur(frame, (5, 5), 0)
+	frame = cv2.resize(frame, (0, 0), fx=videoScaleFactor, fy=videoScaleFactor)
 	
 	foregroundMask = subtractor.apply(frame)
 	foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_OPEN, kernel)
 	
-	# erode the frame, removes noise
-	EKernel = np.ones((6,6), np.uint8)
-	erosion = cv2.erode(foregroundMask, EKernel, iterations=2)
-	
-	dilation = cv2.dilate(erosion, EKernel, iterations=1)
-	
-	
-	# threshold the frame
 	# frameThresh = cv2.adaptiveThreshold(foregroundMask, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-	ret, frameThresh = cv2.threshold(dilation, 200, 255, cv2.THRESH_TOZERO)
+	ret, frameThresh = cv2.threshold(foregroundMask, 200, 255, cv2.THRESH_TOZERO)
 	
-	# find countours
-	contours, _ = cv2.findContours(foregroundMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-	# cv2.drawContours(foregroundMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE, color=(255,255,255))
-	#cv2.drawContours(frameThresh, contours, -1, (255, 255, 0), 3)
+	# erode the frame, removes noise
+	EKernel = np.ones((2, 2), np.uint8)
+	DKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (6,6))
+	erosion = cv2.erode(frameThresh, EKernel, iterations=1)	#gets rid of things
+	dilation = cv2.dilate(erosion, DKernel, iterations=2)	# makes things more pronounced
 	
-	# This section is on displaying the frames
-	
+	# This section displays the frames
 	# show the two frames side by side (appears to be a video)
-	cv2.imshow('Blob frame', foregroundMask)
-	# get dimensions of window
-	blobX, blobY, blobW, blobH = cv2.getWindowImageRect('Blob frame')
-	cv2.moveWindow('Blob frame', 0, 0)
 	cv2.imshow('Original frame', frame)
-	cv2.moveWindow('Original frame', blobX + blobW, blobY)
+	cv2.moveWindow('Original frame', 0, 0)
+	# get dimensions of the window (fix positinoing of the other windows
+	blobX, blobY, blobW, blobH = cv2.getWindowImageRect('Original frame')
 	
-	# show the keypoints
+	cv2.imshow('Blob frame', foregroundMask)
+	cv2.moveWindow('Blob frame', blobX + blobW, 0)
+	
 	cv2.imshow('Threshold', frameThresh)
-	cv2.moveWindow('Threshold', blobX, + blobY + blobH)
+	cv2.moveWindow('Threshold', 0, + blobY + blobH)
 	
-	# print the number of the current frame
-	count = count + 1
-	print(count)
+	cv2.imshow('Dilation & Erosion', dilation)
+	cv2.moveWindow('Dilation & Erosion', blobX + blobW, + blobY + blobH)
 	
-	if cv2.waitKey(15) == 13:
+	# was 15 before
+	if cv2.waitKey(40) == 13:
 		break
 
 cap.release()
