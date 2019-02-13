@@ -2,14 +2,18 @@ import cv2
 import numpy as np
 
 # constants
-video = "nt3D26lrkho.mp4"
-videoScaleFactor = 0.5
+video = "example_02.mp4"
+videoScaleFactor = 1
 
 # Load the video
 cap = cv2.VideoCapture(video)
 
-# subtractor for background subtractor
-subtractor = cv2.createBackgroundSubtractorMOG2()
+# want to detect shadows so they can be thresholded
+subtractor = cv2.createBackgroundSubtractorMOG2(history=300, varThreshold=20, detectShadows=1)
+subtractorTwo = cv2.createBackgroundSubtractorKNN()
+
+# This kernel will be used with the background subtractor
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
 
 # Play the video
 while cap.isOpened():
@@ -17,36 +21,39 @@ while cap.isOpened():
 	# resize frame
 	frame = cv2.resize(frame, (0, 0), fx=videoScaleFactor, fy=videoScaleFactor)
 	
-	# Kernel for the background subtractor
-	subKernel = cv2.getStructuringElement(cv2.MORPH_RECT, (4, 4))
-	foregroundMask = subtractor.apply(frame)
+	foregroundMask = subtractor.apply(frame, None, -1)
 	# opening removes false positives (white dots in background)
-	foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_OPEN, subKernel)
+	foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_OPEN, kernel)
 	# closing removes false negatives (black dots in actual object)
-	foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_CLOSE, subKernel)
-	
-	# erode the frame, removes noise
-	EKernel = np.ones((3, 3), np.uint8)
-	erosion = cv2.erode(foregroundMask, EKernel, iterations=2)
-	dilation = cv2.dilate(erosion, EKernel, iterations=1)
+	#foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_CLOSE, subKernel)
 	
 	# threshold the frame - removes the random large changes
-	ret, frameThresh = cv2.threshold(dilation, 200, 255, cv2.THRESH_TOZERO)
+	ret, frameThresh = cv2.threshold(foregroundMask, 200, 255, cv2.THRESH_TOZERO)
+	
+	# erode the frame, removes noise
+	EKernel = np.ones((2, 2), np.uint8)
+	DKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+	erosion = cv2.erode(frameThresh, EKernel, iterations=1)	#gets rid of things
+	dilation = cv2.dilate(erosion, DKernel, iterations=2)	# makes things more pronounced
 	
 	# This section displays the frames
 	# show the two frames side by side (appears to be a video)
 	cv2.imshow('Original frame', frame)
 	cv2.moveWindow('Original frame', 0, 0)
-	# get dimensions of the window (fix positinoing of the other windows
+	# get dimensions of the window (fix positioning of the other windows
 	blobX, blobY, blobW, blobH = cv2.getWindowImageRect('Original frame')
 	
 	cv2.imshow('Blob frame', foregroundMask)
-	cv2.moveWindow('Blob frame', blobX + blobW, blobY)
+	cv2.moveWindow('Blob frame', blobX + blobW, 0)
 	
-	cv2.imshow('Threshold (best)', frameThresh)
-	cv2.moveWindow('Threshold (best)', blobX, + blobY + blobH)
+	cv2.imshow('Threshold', frameThresh)
+	cv2.moveWindow('Threshold', 0, + blobY + blobH)
 	
-	if cv2.waitKey(15) == 13:
+	cv2.imshow('Dilation & Erosion', dilation)
+	cv2.moveWindow('Dilation & Erosion', blobX + blobW, + blobY + blobH)
+	
+	# was 15 before
+	if cv2.waitKey(40) == 13:
 		break
 
 cap.release()
