@@ -2,35 +2,33 @@ import cv2
 import numpy as np
 
 # constants
-video = "example_01.mp4"
+video = "example_02.mp4"
 videoScaleFactor = 1
 
 # Load the video
 cap = cv2.VideoCapture(video)
 
 # want to detect shadows so they can be thresholded
-subtractor = cv2.createBackgroundSubtractorMOG2(history=600, varThreshold=30, detectShadows=1)
+subtractor = cv2.createBackgroundSubtractorMOG2(history=300, varThreshold=20, detectShadows=1)
+subtractorTwo = cv2.createBackgroundSubtractorKNN()
 
-# This kernel will be used to remove noise
-kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+# This kernel will be used with the background subtractor
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
 
-# Counter for frames. Outputs the current frame number
-count = 0
 # Play the video
 while (1):
 	ret, frame = cap.read()
 	# resize frame
 	frame = cv2.resize(frame, (0, 0), fx=videoScaleFactor, fy=videoScaleFactor)
 	
-	foregroundMask = subtractor.apply(frame)
+	foregroundMask = subtractor.apply(frame, None, -1)
 	foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_OPEN, kernel)
 	
-	# frameThresh = cv2.adaptiveThreshold(foregroundMask, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 	ret, frameThresh = cv2.threshold(foregroundMask, 200, 255, cv2.THRESH_TOZERO)
 	
 	# erode the frame, removes noise
 	EKernel = np.ones((2, 2), np.uint8)
-	DKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (6,6))
+	DKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
 	erosion = cv2.erode(frameThresh, EKernel, iterations=1)	#gets rid of things
 	dilation = cv2.dilate(erosion, DKernel, iterations=2)	# makes things more pronounced
 	
@@ -38,7 +36,7 @@ while (1):
 	# show the two frames side by side (appears to be a video)
 	cv2.imshow('Original frame', frame)
 	cv2.moveWindow('Original frame', 0, 0)
-	# get dimensions of the window (fix positinoing of the other windows
+	# get dimensions of the window (fix positioning of the other windows
 	blobX, blobY, blobW, blobH = cv2.getWindowImageRect('Original frame')
 	
 	cv2.imshow('Blob frame', foregroundMask)
