@@ -16,8 +16,11 @@ subtractorTwo = cv2.createBackgroundSubtractorKNN()
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
 
 # Play the video
-while cap.isOpened():
+while 1:
 	ret, frame = cap.read()
+	if not ret:
+		break
+	
 	# resize frame
 	frame = cv2.resize(frame, (0, 0), fx=videoScaleFactor, fy=videoScaleFactor)
 	
@@ -25,7 +28,7 @@ while cap.isOpened():
 	# opening removes false positives (white dots in background)
 	foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_OPEN, kernel)
 	# closing removes false negatives (black dots in actual object)
-	#foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_CLOSE, subKernel)
+	# foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_CLOSE, subKernel)
 	
 	# threshold the frame - removes the random large changes
 	ret, frameThresh = cv2.threshold(foregroundMask, 200, 255, cv2.THRESH_TOZERO)
@@ -33,8 +36,8 @@ while cap.isOpened():
 	# erode the frame, removes noise
 	EKernel = np.ones((2, 2), np.uint8)
 	DKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-	erosion = cv2.erode(frameThresh, EKernel, iterations=1)	#gets rid of things
-	dilation = cv2.dilate(erosion, DKernel, iterations=2)	# makes things more pronounced
+	erosion = cv2.erode(frameThresh, EKernel, iterations=1)  # gets rid of things
+	dilation = cv2.dilate(erosion, DKernel, iterations=2)  # makes things more pronounced
 	
 	# This section displays the frames
 	# show the two frames side by side (appears to be a video)
