@@ -1,8 +1,25 @@
 import cv2
 import numpy as np
 
+
+def thresh_callback(inputimage):
+    threshold = 100
+    # Detect edges using Canny
+    #Used to detect the jagged edges of the image
+    canny_output = cv2.Canny(inputimage, threshold, threshold * 2)
+    # Find contours
+    contours, hierarchy = cv2.findContours(canny_output, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # Draw contours
+    drawing = np.zeros((canny_output.shape[0], canny_output.shape[1], 3), dtype=np.uint8)
+    for i in range(len(contours)):
+        color = (256, 0, 250)
+        cv2.drawContours(drawing, contours, i, color, 2, cv2.LINE_8, hierarchy, 0)
+    # Show in a window
+    cv2.imshow('Contours', drawing)
+
+
 # constants
-video = "example_02.mp4"
+video = "example_01.mp4"
 videoScaleFactor = 1
 
 # Load the video
@@ -56,7 +73,8 @@ while 1:
 	
 	cv2.imshow('Dilation & Erosion', dilation)
 	cv2.moveWindow('Dilation & Erosion', blobX + blobW, + blobY + blobH)
-	
+	thresh_callback(dilation)
+
 	# was 15 before
 	if cv2.waitKey(40) == 13:
 		break
