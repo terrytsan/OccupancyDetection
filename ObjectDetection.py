@@ -17,7 +17,9 @@ def find_contours(inputimage):
 	drawing = np.zeros((canny_output.shape[0], canny_output.shape[1], 3), dtype=np.uint8)
 	for i in range(len(contours)):
 		color = (256, 0, 250)
-		cv2.drawContours(drawing, contours, i, color, 2, cv2.LINE_8, hierarchy, 0)
+		cv2.drawContours(drawing, contours, i, color, cv2.FILLED, cv2.LINE_8, hierarchy, 0)
+		x, y, w, h = cv2.boundingRect(contours[i])
+		cv2.rectangle(drawing, (x, y), (x + w, y + h), (0, 255, 0), 2)
 	# Show in a window
 	return drawing
 
@@ -74,8 +76,12 @@ while 1:
 	cv2.imshow('Dilation & Erosion', dilation)
 	cv2.moveWindow('Dilation & Erosion', blobX + blobW, + blobY + blobH)
 	
-	cv2.imshow('Contours', find_contours(dilation))
-	cv2.moveWindow('Contours', blobX + (2 * blobW), 0)
+	blurredDilation = cv2.GaussianBlur(dilation, (7, 7), 0)
+	cv2.imshow('Blurred Dilation', blurredDilation)
+	cv2.moveWindow('Blurred Dilation', blobX + (2 * blobW), 0)
+	
+	cv2.imshow('Contours', find_contours(blurredDilation))
+	cv2.moveWindow('Contours', blobX + (2 * blobW), blobY + blobH)
 	
 	# was 15 before
 	if cv2.waitKey(40) == 13:
