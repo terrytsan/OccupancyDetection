@@ -15,12 +15,13 @@ def find_contours(inputimage):
 	contours, hierarchy = cv2.findContours(canny_output, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 	# Draw contours
 	drawing = np.zeros((canny_output.shape[0], canny_output.shape[1], 3), dtype=np.uint8)
-	for i in range(len(contours)):
-		color = (256, 0, 250)
-		cv2.drawContours(drawing, contours, i, color, cv2.FILLED, cv2.LINE_8, hierarchy, 0)
-		x, y, w, h = cv2.boundingRect(contours[i])
+	color = (256, 0, 250)
+	# cv2.drawContours(drawing, contours, i, color, cv2.FILLED, cv2.LINE_8, hierarchy, 0)
+	cv2.drawContours(drawing, contours, -1, color, cv2.LINE_4)
+	# Draw bounding rectangles
+	for c in contours:
+		x, y, w, h = cv2.boundingRect(c)
 		cv2.rectangle(drawing, (x, y), (x + w, y + h), (0, 255, 0), 2)
-	# Show in a window
 	return drawing
 
 
