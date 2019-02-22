@@ -4,8 +4,20 @@ import numpy as np
 # constants
 video = "example_01.mp4"
 videoScaleFactor = 1
+# minimum size of rectangles before they are shown
+minRecSize = 3000
 
 
+# Draws a bounding box around each contour (of a minimum area) and show on the input image
+def draw_box(contours, image):
+	for c in contours:
+		x, y, w, h = cv2.boundingRect(c)
+		# Only draw rectangles larger than minimumRecSize
+		if (w*h) > minRecSize:
+			cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+
+# Finds contours in given input image
 def find_contours(inputimage):
 	threshold = 100
 	# Detect edges using Canny
@@ -19,9 +31,7 @@ def find_contours(inputimage):
 	# cv2.drawContours(drawing, contours, i, color, cv2.FILLED, cv2.LINE_8, hierarchy, 0)
 	cv2.drawContours(drawing, contours, -1, color, cv2.LINE_4)
 	# Draw bounding rectangles
-	for c in contours:
-		x, y, w, h = cv2.boundingRect(c)
-		cv2.rectangle(drawing, (x, y), (x + w, y + h), (0, 255, 0), 2)
+	draw_box(contours, drawing)
 	return drawing
 
 
