@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # constants
-video = "example_01.mp4"
+video = "example_02.mp4"
 videoScaleFactor = 1
 # minimum size of rectangles before they are shown
 minRecSize = 3000
@@ -10,19 +10,23 @@ minRecSize = 3000
 
 # Draws a bounding box around each contour (of a minimum area) and show on the input image
 def draw_box(contours, image):
+	rect_count = 0
 	for c in contours:
 		x, y, w, h = cv2.boundingRect(c)
 		# Only draw rectangles larger than minimumRecSize
-		if (w*h) > minRecSize:
+		if (w * h) > minRecSize:
+			rect_count = rect_count + 1
 			cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+			cv2.putText(image, str(w * h), (x - 1, y - 1), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
+	cv2.putText(image, str(rect_count), (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 
 
 # Finds contours in given input image
-def find_contours(inputimage):
+def find_contours(input_image):
 	threshold = 100
 	# Detect edges using Canny
 	# Used to detect the jagged edges of the image
-	canny_output = cv2.Canny(inputimage, threshold, threshold * 2)
+	canny_output = cv2.Canny(input_image, threshold, threshold * 2)
 	# Find contours
 	contours, hierarchy = cv2.findContours(canny_output, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 	# Draw contours
