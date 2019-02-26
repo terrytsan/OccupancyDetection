@@ -23,16 +23,11 @@ def draw_box(contours, image):
 
 # Finds contours in given input image
 def find_contours(input_image):
-	threshold = 100
-	# Detect edges using Canny
-	# Used to detect the jagged edges of the image
-	canny_output = cv2.Canny(input_image, threshold, threshold * 2)
 	# Find contours
-	contours, hierarchy = cv2.findContours(canny_output, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+	contours, hierarchy = cv2.findContours(input_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 	# Draw contours
-	drawing = np.zeros((canny_output.shape[0], canny_output.shape[1], 3), dtype=np.uint8)
+	drawing = np.zeros((input_image.shape[0], input_image.shape[1], 3), dtype=np.uint8)
 	color = (256, 0, 250)
-	# cv2.drawContours(drawing, contours, i, color, cv2.FILLED, cv2.LINE_8, hierarchy, 0)
 	cv2.drawContours(drawing, contours, -1, color, cv2.LINE_4)
 	# Draw bounding rectangles
 	draw_box(contours, drawing)
