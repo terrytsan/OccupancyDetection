@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
+import ObjectTracker
 
 # constants
-video = "example_02.mp4"
+video = "example_01.mp4"
 videoScaleFactor = 1
 # minimum size of rectangles before they are shown
 minRecSize = 3000
@@ -69,7 +70,7 @@ while 1:
 	DKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
 	# erosion = cv2.erode(frameThresh, EKernel, iterations=1)  # gets rid of things
 	# try and fill the gaps in objects
-	dilation = cv2.dilate(frameThresh, DKernel, iterations=5)  # makes things more pronounced
+	dilation = cv2.dilate(frameThresh, DKernel, iterations=4)  # makes things more pronounced
 	
 	# This section displays the frames
 	# show the two frames side by side (appears to be a video)
