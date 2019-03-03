@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import ObjectTracker
+from ObjectTracker import ObjectTracker
 
 # constants
 video = "example_01.mp4"
@@ -8,9 +8,14 @@ videoScaleFactor = 1
 # minimum size of rectangles before they are shown
 minRecSize = 3000
 
+# Create an object tracker object
+obTrack = ObjectTracker()
+
 
 # Draws a bounding box around each contour (of a minimum area) and show on the input image
 def draw_box(contours, image):
+	# holds all the rectangles (to be passed into the object tracker)
+	rectangles = []
 	rect_count = 0
 	for c in contours:
 		x, y, w, h = cv2.boundingRect(c)
@@ -18,6 +23,8 @@ def draw_box(contours, image):
 		if (w * h) > minRecSize:
 			rect_count = rect_count + 1
 			cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+			rectangles.append([x, y, x + w, y + h])
+			obTrack.update(rectangles)
 			cv2.putText(image, str(w * h), (x - 1, y - 1), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 	cv2.putText(image, str(rect_count), (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 
