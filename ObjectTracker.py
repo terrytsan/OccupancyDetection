@@ -6,7 +6,9 @@ class ObjectTracker():
 	def __init__(self):
 		# initialise variables when object is first created
 		self.currentObjectID = 0
+		# Dictionary which holds the centroid for each object
 		self.objects = {}
+		# Holds the amount of frames a corresponding object has been "missing" for
 		self.disappearedTime = {}
 	
 	# Add the centroid to the list of objects to track
@@ -45,11 +47,52 @@ class ObjectTracker():
 			for centroid in input_centroids:
 				# Start tracking all inputted rectangles
 				self.start_track(centroid)
-		
-		object_centroids = list(self.objects.values())
-		
-		# Calculate distances between each centroid
-		distance = dist.cdist(np.array(object_centroids), input_centroids)
-		
-		for d in distance:
-			print("distance", d)
+		else:
+			# Holds all the currently used object IDs (some may have disappeared)
+			objectIDs = list(self.objects.keys())
+			object_centroids = list(self.objects.values())
+			object_centroidsarray = np.array(object_centroids)
+			
+			# Calculate distances between each centroid
+			distance = dist.cdist(np.array(object_centroids), input_centroids)
+			print("distance array:\n", distance, "\n")
+			
+			# Gets the index of the shortest distance in each row and then orders them in ascending order.
+			# Each entry represents the index of input centroid with the shortest distance to the corresponding
+			# (already) tracked centroid
+			distance_min_row = distance.min(axis=1).argsort()
+			print("index of sorted distance array:\n", distance_min_row)
+			
+			# Do the same for the columns
+			distance_min_col = distance.argmin(axis=1)[distance_min_row]
+			print("sorted distance columns:\n", distance_min_col)
+			
+			# Essentially x,y coords for the minimum values (1 per row)
+			min_coords = list(zip(distance_min_row, distance_min_col))
+			print("Coordinates of minimum value:\n", min_coords)
+			
+			# Holds the used x and y  coords so that the same centroid isn't used twice
+			usedX = set()
+			usedY = set()
+			
+			# Go through each row coord and assign objects[row] with with a new coordinate (the input centroid)
+			for (x, y) in min_coords:
+				if (x not in usedX) and (y not in usedY):
+				
+					print("Modifying row", x)
+					# Replace the existing centroid with the new input centroid with smallest distance
+					self.objects[objectIDs[x]] = input_centroids[y]
+					# Reset the disappeared time
+					self.disappearedTime[objectIDs[x]] = 0
+			
+					# Add x and y to the used sets
+					usedX.add(x)
+					usedY.add(y)
+					# TODO add maximum distance a centroid can move between a frame
+			
+			# TODO if there's more x remaining, treat these as having disappeared
+			
+			# TODO if there's more y remaining, register as new objects
+			
+			print(len(usedX), len(objectIDs))
+			print(len(usedY), len(input_centroids))
