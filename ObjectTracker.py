@@ -32,7 +32,16 @@ class ObjectTracker():
 		maxDist = 100
 		
 		print("Length of input", len(rectangles))
-		
+		if len(rectangles) == 0:
+			# If nothing is input, increment disappeared time of all objects
+			print("Nothing input")
+			for objectID in list(self.objects.keys()):
+				self.disappearedTime[objectID] += 1
+				if self.disappearedTime[objectID] > self.maxDisTime:
+					self.end_track(objectID)
+			# Leave the function
+			return self.objects
+			
 		# initialize array to hold all the centroids for the inputted rectangles
 		input_centroids = np.zeros((len(rectangles), 2), dtype="int")
 		
@@ -64,15 +73,15 @@ class ObjectTracker():
 			# Each entry represents the index of input centroid with the shortest distance to the corresponding
 			# (already) tracked centroid
 			distance_min_row = distance.min(axis=1).argsort()
-			#print("index of sorted distance array:\n", distance_min_row)
+			# print("index of sorted distance array:\n", distance_min_row)
 			
 			# Do the same for the columns
 			distance_min_col = distance.argmin(axis=1)[distance_min_row]
-			#print("sorted distance columns:\n", distance_min_col)
+			# print("sorted distance columns:\n", distance_min_col)
 			
 			# Essentially x,y coords for the minimum values (1 per row)
 			min_coords = list(zip(distance_min_row, distance_min_col))
-			#print("Coordinates of minimum value:\n", min_coords)
+			# print("Coordinates of minimum value:\n", min_coords)
 			
 			# Holds all possible indexes of objects and input_Centroids so that the same centroid isn't used twice
 			remaining_x = set(list(range(0, len(objectIDs))))
@@ -81,7 +90,7 @@ class ObjectTracker():
 			# Go through each row coord and assign objects[row] with with a new coordinate (the input centroid)
 			for (x, y) in min_coords:
 				if (x in remaining_x) and (y in remaining_y):
-					#print("Distance between", x, "and", y, "is", distance[x][y])
+					# print("Distance between", x, "and", y, "is", distance[x][y])
 					if distance[x][y] < maxDist:
 						# print("Distance acceptable")
 						# Replace the existing centroid with the new input centroid with smallest distance
