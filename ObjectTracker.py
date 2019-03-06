@@ -10,10 +10,13 @@ class ObjectTracker():
 		self.objects = {}
 		# Holds the amount of frames a corresponding object has been "missing" for
 		self.disappearedTime = {}
+		# Maximum time an object can go "missing" for before tracking ends
+		self.maxDisTime = 50
 	
 	# Add the centroid to the list of objects to track
 	def start_track(self, centroid):
 		self.objects[self.currentObjectID] = centroid
+		print("Registered", centroid)
 		self.disappearedTime[self.currentObjectID] = 0
 		self.currentObjectID = self.currentObjectID + 1
 	
@@ -25,10 +28,10 @@ class ObjectTracker():
 	
 	# Updates the list of tracked objects, pass in current frames's rectangles
 	def update(self, rectangles):
-		# Just testing how I can pass in the centroids as a parameter
-		# print(len(rectangles))
-		# for i in rectangles:
-		# print(i)
+		# The maximum distance an object can move between frames
+		maxDist = 100
+		
+		print("Length of input", len(rectangles))
 		
 		# initialize array to hold all the centroids for the inputted rectangles
 		input_centroids = np.zeros((len(rectangles), 2), dtype="int")
@@ -61,38 +64,47 @@ class ObjectTracker():
 			# Each entry represents the index of input centroid with the shortest distance to the corresponding
 			# (already) tracked centroid
 			distance_min_row = distance.min(axis=1).argsort()
-			print("index of sorted distance array:\n", distance_min_row)
+			#print("index of sorted distance array:\n", distance_min_row)
 			
 			# Do the same for the columns
 			distance_min_col = distance.argmin(axis=1)[distance_min_row]
-			print("sorted distance columns:\n", distance_min_col)
+			#print("sorted distance columns:\n", distance_min_col)
 			
 			# Essentially x,y coords for the minimum values (1 per row)
 			min_coords = list(zip(distance_min_row, distance_min_col))
-			print("Coordinates of minimum value:\n", min_coords)
+			#print("Coordinates of minimum value:\n", min_coords)
 			
-			# Holds the used x and y  coords so that the same centroid isn't used twice
-			usedX = set()
-			usedY = set()
+			# Holds all possible indexes of objects and input_Centroids so that the same centroid isn't used twice
+			remaining_x = set(list(range(0, len(objectIDs))))
+			remaining_y = set(list(range(0, len(input_centroids))))
 			
 			# Go through each row coord and assign objects[row] with with a new coordinate (the input centroid)
 			for (x, y) in min_coords:
-				if (x not in usedX) and (y not in usedY):
-				
-					print("Modifying row", x)
-					# Replace the existing centroid with the new input centroid with smallest distance
-					self.objects[objectIDs[x]] = input_centroids[y]
-					# Reset the disappeared time
-					self.disappearedTime[objectIDs[x]] = 0
+				if (x in remaining_x) and (y in remaining_y):
+					#print("Distance between", x, "and", y, "is", distance[x][y])
+					if distance[x][y] < maxDist:
+						# print("Distance acceptable")
+						# Replace the existing centroid with the new input centroid with smallest distance
+						self.objects[objectIDs[x]] = input_centroids[y]
+						# Reset the disappeared time
+						self.disappearedTime[objectIDs[x]] = 0
+						
+						# Remove x and y from remaining set
+						remaining_x.remove(x)
+						remaining_y.remove(y)
 			
-					# Add x and y to the used sets
-					usedX.add(x)
-					usedY.add(y)
-					# TODO add maximum distance a centroid can move between a frame
+			# Go through all the remaining original objects (no match has been found in this new frame)
+			for x in remaining_x:
+				# Increment disappeared time
+				self.disappearedTime[objectIDs[x]] += 1
+				# Check if time value has exceeded limit
+				print(self.objects[objectIDs[x]], "Has disappeared")
+				if self.disappearedTime[objectIDs[x]] > self.maxDisTime:
+					self.end_track(objectIDs[x])
 			
-			# TODO if there's more x remaining, treat these as having disappeared
-			
-			# TODO if there's more y remaining, register as new objects
-			
-			print(len(usedX), len(objectIDs))
-			print(len(usedY), len(input_centroids))
+			# Go through the remaining input centroids that weren't matched and register them as new objects
+			for y in remaining_y:
+				self.start_track(input_centroids[y])
+		
+		# return the dictionary of tracked objects
+		return self.objects

@@ -18,14 +18,25 @@ def draw_box(contours, image):
 	rectangles = []
 	rect_count = 0
 	for c in contours:
+		# Approximate a bounding rectangle around the contour
 		x, y, w, h = cv2.boundingRect(c)
 		# Only draw rectangles larger than minimumRecSize
 		if (w * h) > minRecSize:
 			rect_count = rect_count + 1
+			# draw the rectangle on the passed in image
 			cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 			rectangles.append([x, y, x + w, y + h])
-			obTrack.update(rectangles)
+			# Print the size of the rectangle next to the rectangle
 			cv2.putText(image, str(w * h), (x - 1, y - 1), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
+	# Get a list of tracked objects
+	trackedObjects = obTrack.update(rectangles)
+	
+	# Go through each tracked object and draw a box around it
+	for (ID, centroid) in trackedObjects.items():
+		trackedObjectText = ("ID: %s" % (ID))
+		cv2.putText(image, (trackedObjectText), (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 2)
+		
+	# Print out the number of rectangles found
 	cv2.putText(image, str(rect_count), (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 
 
