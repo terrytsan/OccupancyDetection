@@ -1,3 +1,4 @@
+# An object tracker keeps track of rectangles it is given, assigning unique IDs to each one
 from scipy.spatial import distance as dist
 import numpy as np
 
@@ -11,7 +12,7 @@ class ObjectTracker():
 		# Holds the amount of frames a corresponding object has been "missing" for
 		self.disappearedTime = {}
 		# Maximum time an object can go "missing" for before tracking ends
-		self.maxDisTime = 50
+		self.maxDisTime = 10
 	
 	# Add the centroid to the list of objects to track
 	def start_track(self, centroid):
@@ -29,7 +30,7 @@ class ObjectTracker():
 	# Updates the list of tracked objects, pass in current frames's rectangles
 	def update(self, rectangles):
 		# The maximum distance an object can move between frames
-		maxDist = 100
+		max_dist = 100
 		
 		print("Length of input", len(rectangles))
 		if len(rectangles) == 0:
@@ -63,7 +64,6 @@ class ObjectTracker():
 			# Holds all the currently used object IDs (some may have disappeared)
 			objectIDs = list(self.objects.keys())
 			object_centroids = list(self.objects.values())
-			object_centroidsarray = np.array(object_centroids)
 			
 			# Calculate distances between each centroid
 			distance = dist.cdist(np.array(object_centroids), input_centroids)
@@ -73,15 +73,12 @@ class ObjectTracker():
 			# Each entry represents the index of input centroid with the shortest distance to the corresponding
 			# (already) tracked centroid
 			distance_min_row = distance.min(axis=1).argsort()
-			# print("index of sorted distance array:\n", distance_min_row)
 			
 			# Do the same for the columns
 			distance_min_col = distance.argmin(axis=1)[distance_min_row]
-			# print("sorted distance columns:\n", distance_min_col)
 			
 			# Essentially x,y coords for the minimum values (1 per row)
 			min_coords = list(zip(distance_min_row, distance_min_col))
-			# print("Coordinates of minimum value:\n", min_coords)
 			
 			# Holds all possible indexes of objects and input_Centroids so that the same centroid isn't used twice
 			remaining_x = set(list(range(0, len(objectIDs))))
@@ -91,7 +88,7 @@ class ObjectTracker():
 			for (x, y) in min_coords:
 				if (x in remaining_x) and (y in remaining_y):
 					# print("Distance between", x, "and", y, "is", distance[x][y])
-					if distance[x][y] < maxDist:
+					if distance[x][y] < max_dist:
 						# print("Distance acceptable")
 						# Replace the existing centroid with the new input centroid with smallest distance
 						self.objects[objectIDs[x]] = input_centroids[y]
