@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from ObjectTracker import ObjectTracker
+from BodyTracker import BodyTracker
 
 # constants
 video = "example_01.mp4"
@@ -9,7 +9,7 @@ videoScaleFactor = 1
 minRecSize = 3000
 
 # Create an object tracker object
-obTrack = ObjectTracker()
+obTrack = BodyTracker()
 
 
 # Draws a bounding box around each contour (of a minimum area) and show on the input image

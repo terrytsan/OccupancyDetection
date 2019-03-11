@@ -3,11 +3,11 @@ from scipy.spatial import distance as dist
 import numpy as np
 
 
-class ObjectTracker():
+class BodyTracker:
 	def __init__(self):
 		# initialise variables when object is first created
 		self.currentObjectID = 0
-		# Dictionary which holds the centroid for each object
+		# Dictionary which holds body objects
 		self.objects = {}
 		# Holds the amount of frames a corresponding object has been "missing" for
 		self.disappearedTime = {}

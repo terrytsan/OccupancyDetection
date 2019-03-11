@@ -1,9 +1,9 @@
 # This is used to test the ObjectTracker class
 import cv2
 import numpy as np
-from ObjectTracker import ObjectTracker
+from BodyTracker import BodyTracker
 
-obTrack = ObjectTracker()
+obTrack = BodyTracker()
 # rectangles = []
 
 rectangles = [[300, 200, 50, 50], [104, 190, 50, 50], [600, 300, 50, 50]]
