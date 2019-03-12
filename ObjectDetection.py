@@ -8,9 +8,33 @@ video = "example_01.mp4"
 videoScaleFactor = 1
 # minimum size of rectangles before they are shown
 minRecSize = 3000
+# y coord of the crossing line
+line_y = 150
 
 # Create an object tracker object
 obTrack = BodyTracker()
+
+# Number of people on the train
+onTrain = 0
+
+
+# Return boolean, if line is crossed. True if line has been crossed. Requires y coord of line.
+def line_crossed(body_y, direction):
+	# If the direction is out (down)
+	if direction == 0:
+		# check if y coord is less than lineY (therefore line has been crossed)
+		if line_y > body_y:
+			return True
+		else:
+			return False
+	
+	# If the line is in (up)
+	if direction == 1:
+		# check if y coord is more than lineY (therefore line has been crossed)
+		if line_y > body_y:
+			return True
+		else:
+			return False
 
 
 # Draws a bounding box around each contour (of a minimum area) and show on the input image
@@ -32,16 +56,22 @@ def draw_box(contours, image):
 	# Get a list of tracked objects
 	tracked_bodies = obTrack.update(rectangles)
 	
-	# Go through each tracked object and draw a box around it
-	for (ID, centroid) in tracked_bodies.items():
+	# Draw the crossing line
+	cv2.line(image, (0, line_y), (500, line_y), (0, 255, 0), 5)
+	
+	# Write text on the centroid
+	for (ID, body) in tracked_bodies.items():
 		# 0 is down
-		if centroid.direction == 0:
+		if body.direction == 0:
 			direction = "down"
 		else:
 			direction = "up"
+			
+		if line_crossed(body.location[1], body.direction):
+			cv2.putText(image, "line crossed", (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 		trackedObjectText = ("ID: %s %s" % (ID, direction))
-		cv2.putText(image, (trackedObjectText), (centroid.location[0] - 10, centroid.location[1] - 10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 2)
-		
+		cv2.putText(image, (trackedObjectText), (body.location[0] - 10, body.location[1] - 10),
+					cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 2)
 	
 	# Print out the number of rectangles found
 	cv2.putText(image, str(rect_count), (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
