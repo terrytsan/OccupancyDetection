@@ -1,31 +1,37 @@
 # An object tracker keeps track of rectangles it is given, assigning unique IDs to each one
 from scipy.spatial import distance as dist
 import numpy as np
-
+from Body import Body
 
 class BodyTracker:
 	def __init__(self):
-		# initialise variables when object is first created
-		self.currentObjectID = 0
-		# Dictionary which holds body objects
-		self.objects = {}
-		# Holds the amount of frames a corresponding object has been "missing" for
+		# initialise variables when the tracker is first created
+		self.currentBodyID = 0
+		# Dictionary which holds body objects (holding ID makes things easier) (might be able to change to array in future)
+		self.bodies = {}
+		# Dictionary holding the amount of frames a corresponding body has been "missing" for.
 		self.disappearedTime = {}
-		# Maximum time an object can go "missing" for before tracking ends
+		# Maximum time a body can go "missing" for before tracking ends
 		self.maxDisTime = 10
 	
-	# Add the centroid to the list of objects to track
+	# Create a body with the centroid and start tracking
 	def start_track(self, centroid):
-		self.objects[self.currentObjectID] = centroid
-		print("Registered", centroid)
-		self.disappearedTime[self.currentObjectID] = 0
-		self.currentObjectID = self.currentObjectID + 1
+		# Create a new body object
+		body = Body(self.currentBodyID, centroid)
+		# Add the new body to the list of bodies
+		self.bodies[self.currentBodyID] = body
+		
+		print("Registered", self.bodies[self.currentBodyID].location, "as", self.bodies[self.currentBodyID].ID)
+		# Initialise a disappearedTime for the new body
+		self.disappearedTime[self.currentBodyID] = 0
+		# Increment the ID
+		self.currentBodyID = self.currentBodyID + 1
 	
-	# Stop tracking the passed in object
-	def end_track(self, objectID):
-		# Remove both instances of the object from the dictionaries
-		del self.objects[objectID]
-		del self.disappearedTime[objectID]
+	# Stop tracking the passed in body
+	def end_track(self, body_id):
+		# Remove both instances of the body from the dictionaries
+		del self.bodies[body_id]
+		del self.disappearedTime[body_id]
 	
 	# Updates the list of tracked objects, pass in current frames's rectangles
 	def update(self, rectangles):
@@ -36,17 +42,18 @@ class BodyTracker:
 		if len(rectangles) == 0:
 			# If nothing is input, increment disappeared time of all objects
 			print("Nothing input")
-			for objectID in list(self.objects.keys()):
-				self.disappearedTime[objectID] += 1
-				if self.disappearedTime[objectID] > self.maxDisTime:
-					self.end_track(objectID)
+			# Need to go through each ID in each body enumerate(self.bodies[i].)??
+			for bodyID in list(self.bodies.keys()):
+				self.disappearedTime[bodyID] += 1
+				if self.disappearedTime[bodyID] > self.maxDisTime:
+					self.end_track(bodyID)
 			# Leave the function
-			return self.objects
+			return self.bodies
 			
 		# initialize array to hold all the centroids for the inputted rectangles
 		input_centroids = np.zeros((len(rectangles), 2), dtype="int")
 		
-		# Extract the centroid from every input rectangle
+		# Convert the inputted rectangles to centroids
 		for (rec, (startX, startY, endX, endY)) in enumerate(rectangles):
 			# print("new", startX, startY, endX, endY)
 			# place in an array
@@ -55,15 +62,21 @@ class BodyTracker:
 			input_centroids[rec] = (x_centroid, y_centroid)
 		
 		# If there are currently no tracked objects
-		if len(self.objects) == 0:
+		if len(self.bodies) == 0:
 			print("No objects, adding", len(rectangles))
 			for centroid in input_centroids:
 				# Start tracking all inputted rectangles
 				self.start_track(centroid)
 		else:
+			#Testing stuff
+			#print("Test ", self.bodies[0].location)
+			
 			# Holds all the currently used object IDs (some may have disappeared)
-			objectIDs = list(self.objects.keys())
-			object_centroids = list(self.objects.values())
+			objectIDs = list(self.bodies.keys())
+			
+			object_centroids = []
+			for body in self.bodies.values():
+				object_centroids.append(body.location)
 			
 			# Calculate distances between each centroid
 			distance = dist.cdist(np.array(object_centroids), input_centroids)
@@ -91,7 +104,7 @@ class BodyTracker:
 					if distance[x][y] < max_dist:
 						# print("Distance acceptable")
 						# Replace the existing centroid with the new input centroid with smallest distance
-						self.objects[objectIDs[x]] = input_centroids[y]
+						self.bodies[objectIDs[x]].update_location(input_centroids[y])
 						# Reset the disappeared time
 						self.disappearedTime[objectIDs[x]] = 0
 						
@@ -104,7 +117,7 @@ class BodyTracker:
 				# Increment disappeared time
 				self.disappearedTime[objectIDs[x]] += 1
 				# Check if time value has exceeded limit
-				print(self.objects[objectIDs[x]], "Has disappeared")
+				print(self.bodies[objectIDs[x]].location, "Has disappeared")
 				if self.disappearedTime[objectIDs[x]] > self.maxDisTime:
 					self.end_track(objectIDs[x])
 			
@@ -113,4 +126,4 @@ class BodyTracker:
 				self.start_track(input_centroids[y])
 		
 		# return the dictionary of tracked objects
-		return self.objects
+		return self.bodies

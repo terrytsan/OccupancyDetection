@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from BodyTracker import BodyTracker
+from Body import Body
 
 # constants
 video = "example_01.mp4"
@@ -29,13 +30,19 @@ def draw_box(contours, image):
 			# Print the size of the rectangle next to the rectangle
 			cv2.putText(image, str(w * h), (x - 1, y - 1), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 	# Get a list of tracked objects
-	trackedObjects = obTrack.update(rectangles)
+	tracked_bodies = obTrack.update(rectangles)
 	
 	# Go through each tracked object and draw a box around it
-	for (ID, centroid) in trackedObjects.items():
-		trackedObjectText = ("ID: %s" % (ID))
-		cv2.putText(image, (trackedObjectText), (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 2)
+	for (ID, centroid) in tracked_bodies.items():
+		# 0 is down
+		if centroid.direction == 0:
+			direction = "down"
+		else:
+			direction = "up"
+		trackedObjectText = ("ID: %s %s" % (ID, direction))
+		cv2.putText(image, (trackedObjectText), (centroid.location[0] - 10, centroid.location[1] - 10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 2)
 		
+	
 	# Print out the number of rectangles found
 	cv2.putText(image, str(rect_count), (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 
