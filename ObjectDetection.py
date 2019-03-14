@@ -31,14 +31,14 @@ def line_crossed(body_y, direction):
 	# If the line is in (up)
 	if direction == 1:
 		# check if y coord is more than lineY (therefore line has been crossed)
-		if line_y > body_y:
+		if line_y < body_y:
 			return True
 		else:
 			return False
 
 
 # Draws a bounding box around each contour (of a minimum area) and show on the input image
-def draw_box(contours, image):
+def draw_graphics(contours, image):
 	# holds all the rectangles (to be passed into the object tracker)
 	rectangles = []
 	rect_count = 0
@@ -57,22 +57,26 @@ def draw_box(contours, image):
 	tracked_bodies = obTrack.update(rectangles)
 	
 	# Draw the crossing line
-	cv2.line(image, (0, line_y), (500, line_y), (0, 255, 0), 5)
+	cv2.line(image, (0, line_y), (500, line_y), (0, 255, 0), 3)
 	
 	# Write text on the centroid
 	for (ID, body) in tracked_bodies.items():
+		body_x = body.location[0]
+		body_y = body.location[1]
 		# 0 is down
 		if body.direction == 0:
 			direction = "down"
 		else:
 			direction = "up"
 			
-		if line_crossed(body.location[1], body.direction):
+		if line_crossed(body_y, body.direction):
 			cv2.putText(image, "line crossed", (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
+			
 		trackedObjectText = ("ID: %s %s" % (ID, direction))
-		cv2.putText(image, (trackedObjectText), (body.location[0] - 10, body.location[1] - 10),
+		cv2.putText(image, (trackedObjectText), (body_x - 10, body_y - 10),
 					cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 2)
-	
+		# rectangle indicating centroid
+		cv2.rectangle(image, (body_x, body_y - 1), (body_x + 1, body_y + 1), (0, 255, 0), 2)
 	# Print out the number of rectangles found
 	cv2.putText(image, str(rect_count), (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 
@@ -86,7 +90,7 @@ def find_contours(input_image):
 	color = (256, 0, 250)
 	cv2.drawContours(drawing, contours, -1, color, cv2.LINE_4)
 	# Draw bounding rectangles
-	draw_box(contours, drawing)
+	draw_graphics(contours, drawing)
 	return drawing
 
 

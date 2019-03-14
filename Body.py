@@ -7,6 +7,9 @@ class Body:
 		self.ID = id
 		# Represents the current direction of the body (0 is out of train) (out is down the screen)
 		self.direction = 0
+		
+		self.crossedLine = False
+		# Flag indicates if the body has crossed the line
 	
 	# Test function
 	def print_something(self):
