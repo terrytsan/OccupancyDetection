@@ -12,33 +12,38 @@ minRecSize = 3000
 line_y = 150
 
 # Create an object tracker object
-obTrack = BodyTracker()
+bodTrack = BodyTracker()
 
 # Number of people on the train
 onTrain = 0
 
 
 # Return boolean, if line is crossed. True if line has been crossed. Requires y coord of line.
-def line_crossed(body_y, direction):
-	# If the direction is out (down)
-	if direction == 0:
-		# check if y coord is less than lineY (therefore line has been crossed)
-		if line_y > body_y:
-			return True
-		else:
-			return False
+def line_crossed(body):
 	
-	# If the line is in (up)
-	if direction == 1:
-		# check if y coord is more than lineY (therefore line has been crossed)
-		if line_y < body_y:
+	# Skip check if there is no previous points (first frame body appears in)
+	if len(body.visited) <= 1:
+		return False
+
+	# If the direction is down
+	if body.direction == 0:
+		# If the previous location_y is less than(<=) line_y AND current_y is greater than line_y
+		if body.visited[-2][1] <= line_y < body.location[1]:
+			# Line has been crossed
 			return True
-		else:
-			return False
+	# If the direction is up
+	if body.direction == 1:
+		# If the previous location_y is greater(>=) than line_y AND current_y is less than line_y
+		if body.visited[-2][1] >= line_y > body.location[1]:
+			# Line has been crossed
+			return True
+	return False
 
 
 # Draws a bounding box around each contour (of a minimum area) and show on the input image
 def draw_graphics(contours, image):
+	# Declare that we will use this variable is global
+	global onTrain
 	# holds all the rectangles (to be passed into the object tracker)
 	rectangles = []
 	rect_count = 0
@@ -54,7 +59,7 @@ def draw_graphics(contours, image):
 			# Print the size of the rectangle next to the rectangle
 			cv2.putText(image, str(w * h), (x - 1, y - 1), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 	# Get a list of tracked objects
-	tracked_bodies = obTrack.update(rectangles)
+	tracked_bodies = bodTrack.update(rectangles)
 	
 	# Draw the crossing line
 	cv2.line(image, (0, line_y), (500, line_y), (0, 255, 0), 3)
@@ -68,18 +73,26 @@ def draw_graphics(contours, image):
 			direction = "down"
 		else:
 			direction = "up"
-			
-		if line_crossed(body_y, body.direction):
+		
+		if line_crossed(body):
 			cv2.putText(image, "line crossed", (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
+			# If direction is down (leaving)
+			if body.direction == 0:
+				onTrain -= 1
+			# If direction is up (boarding)
+			if body.direction == 1:
+				onTrain += 1
 			
 		trackedObjectText = ("ID: %s %s" % (ID, direction))
 		cv2.putText(image, (trackedObjectText), (body_x - 10, body_y - 10),
 					cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 2)
 		# rectangle indicating centroid
 		cv2.rectangle(image, (body_x, body_y - 1), (body_x + 1, body_y + 1), (0, 255, 0), 2)
-	# Print out the number of rectangles found
+	# Print out the number of rectangles in current frame
 	cv2.putText(image, str(rect_count), (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 
+	# Print out the number of people on board
+	cv2.putText(image, str(onTrain), (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0))
 
 # Finds contours in given input image
 def find_contours(input_image):

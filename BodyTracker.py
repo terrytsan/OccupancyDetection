@@ -1,7 +1,9 @@
-# An object tracker keeps track of rectangles it is given, assigning unique IDs to each one
+# A body tracker keeps track of a set of rectangles it is given, assigning unique IDs to each one
+# update the tracker with some new rectangles and it will return a dictionary of bodies
 from scipy.spatial import distance as dist
 import numpy as np
 from Body import Body
+
 
 class BodyTracker:
 	def __init__(self):
@@ -14,7 +16,7 @@ class BodyTracker:
 		# Maximum time a body can go "missing" for before tracking ends
 		self.maxDisTime = 10
 	
-	# Create a body with the centroid and start tracking
+	# Create a body with the centroid and start tracking it
 	def start_track(self, centroid):
 		# Create a new body object
 		body = Body(self.currentBodyID, centroid)
@@ -33,16 +35,15 @@ class BodyTracker:
 		del self.bodies[body_id]
 		del self.disappearedTime[body_id]
 	
-	# Updates the list of tracked objects, pass in current frames's rectangles
+	# Updates the list of tracked bodies, pass in current frames's rectangles
 	def update(self, rectangles):
-		# The maximum distance an object can move between frames
+		# The maximum distance a body can move between frames
 		max_dist = 100
 		
-		print("Length of input", len(rectangles))
+		# print("Length of input", len(rectangles))
 		if len(rectangles) == 0:
 			# If nothing is input, increment disappeared time of all objects
-			print("Nothing input")
-			# Need to go through each ID in each body enumerate(self.bodies[i].)??
+			# print("Nothing input")
 			for bodyID in list(self.bodies.keys()):
 				self.disappearedTime[bodyID] += 1
 				if self.disappearedTime[bodyID] > self.maxDisTime:
@@ -56,31 +57,28 @@ class BodyTracker:
 		# Convert the inputted rectangles to centroids
 		for (rec, (startX, startY, endX, endY)) in enumerate(rectangles):
 			# print("new", startX, startY, endX, endY)
-			# place in an array
 			x_centroid = int((startX + endX) / 2)
 			y_centroid = int((startY + endY) / 2)
 			input_centroids[rec] = (x_centroid, y_centroid)
 		
 		# If there are currently no tracked objects
 		if len(self.bodies) == 0:
-			print("No objects, adding", len(rectangles))
+			# print("No objects, adding", len(rectangles))
 			for centroid in input_centroids:
 				# Start tracking all inputted rectangles
 				self.start_track(centroid)
 		else:
-			#Testing stuff
-			#print("Test ", self.bodies[0].location)
-			
+			# Try and approximate the new centroids to the tracked bodies (based on distance)
 			# Holds all the currently used object IDs (some may have disappeared)
-			objectIDs = list(self.bodies.keys())
+			body_ids = list(self.bodies.keys())
 			
-			object_centroids = []
+			existing_centroids = []
 			for body in self.bodies.values():
-				object_centroids.append(body.location)
+				existing_centroids.append(body.location)
 			
 			# Calculate distances between each centroid
-			distance = dist.cdist(np.array(object_centroids), input_centroids)
-			print("distance array:\n", distance, "\n")
+			distance = dist.cdist(np.array(existing_centroids), input_centroids)
+			#print("distance array:\n", distance, "\n")
 			
 			# Gets the index of the shortest distance in each row and then orders them in ascending order.
 			# Each entry represents the index of input centroid with the shortest distance to the corresponding
@@ -90,23 +88,22 @@ class BodyTracker:
 			# Do the same for the columns
 			distance_min_col = distance.argmin(axis=1)[distance_min_row]
 			
-			# Essentially x,y coords for the minimum values (1 per row)
+			# List of x,y coords (in matrix) for the minimum values (1 per row)
 			min_coords = list(zip(distance_min_row, distance_min_col))
 			
 			# Holds all possible indexes of objects and input_Centroids so that the same centroid isn't used twice
-			remaining_x = set(list(range(0, len(objectIDs))))
+			remaining_x = set(list(range(0, len(body_ids))))
 			remaining_y = set(list(range(0, len(input_centroids))))
 			
-			# Go through each row coord and assign objects[row] with with a new coordinate (the input centroid)
+			# Go through each row coord and assign bodies[row] with with a new coordinate (the input centroid)
 			for (x, y) in min_coords:
 				if (x in remaining_x) and (y in remaining_y):
 					# print("Distance between", x, "and", y, "is", distance[x][y])
 					if distance[x][y] < max_dist:
-						# print("Distance acceptable")
 						# Replace the existing centroid with the new input centroid with smallest distance
-						self.bodies[objectIDs[x]].update_location(input_centroids[y])
+						self.bodies[body_ids[x]].update_location(input_centroids[y])
 						# Reset the disappeared time
-						self.disappearedTime[objectIDs[x]] = 0
+						self.disappearedTime[body_ids[x]] = 0
 						
 						# Remove x and y from remaining set
 						remaining_x.remove(x)
@@ -115,11 +112,11 @@ class BodyTracker:
 			# Go through all the remaining original objects (no match has been found in this new frame)
 			for x in remaining_x:
 				# Increment disappeared time
-				self.disappearedTime[objectIDs[x]] += 1
+				self.disappearedTime[body_ids[x]] += 1
 				# Check if time value has exceeded limit
-				print(self.bodies[objectIDs[x]].location, "Has disappeared")
-				if self.disappearedTime[objectIDs[x]] > self.maxDisTime:
-					self.end_track(objectIDs[x])
+				print(self.bodies[body_ids[x]].location, "Has disappeared")
+				if self.disappearedTime[body_ids[x]] > self.maxDisTime:
+					self.end_track(body_ids[x])
 			
 			# Go through the remaining input centroids that weren't matched and register them as new objects
 			for y in remaining_y:

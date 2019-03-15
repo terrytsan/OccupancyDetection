@@ -21,16 +21,13 @@ class Body:
 		total = 0
 		for i in self.visited:
 			total += i[1]
+		# Calculate the average of all past locations
 		average = total / len(self.visited)
-		print("average:", average)
-		print("locationNow:", self.location[1])
 		if average < self.location[1]:
 			# Less than current location (moving down)
 			self.direction = 0
-			print("direction is 0")
 		else:
 			self.direction = 1
-			print("direction is 1")
 	
 	# Update the location of the body
 	def update_location(self, location):
