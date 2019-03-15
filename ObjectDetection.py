@@ -10,6 +10,8 @@ videoScaleFactor = 1
 minRecSize = 3000
 # y coord of the crossing line
 line_y = 150
+# Toggle writing output to file
+writeToFile = False
 
 # Create an object tracker object
 bodTrack = BodyTracker()
@@ -117,6 +119,8 @@ subtractorTwo = cv2.createBackgroundSubtractorKNN()
 # This kernel will be used with the background subtractor
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
 
+writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'MJPG'), 30, (402, 300))
+
 # Play the video
 while 1:
 	ret, frame = cap.read()
@@ -166,6 +170,9 @@ while 1:
 	
 	cv2.imshow('Contours', find_contours(blurredDilation))
 	cv2.moveWindow('Contours', blobX + (2 * blobW), blobY + blobH)
+	
+	if writeToFile:
+		writer.write(find_contours(blurredDilation).astype('uint8'))
 	
 	# was 15 before
 	if cv2.waitKey(40) == 13:
