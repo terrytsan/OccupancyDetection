@@ -15,6 +15,8 @@ class BodyTracker:
 		self.disappearedTime = {}
 		# Maximum time a body can go "missing" for before tracking ends
 		self.maxDisTime = 10
+		# The maximum distance a body can move between frames
+		self.max_dist = 150
 	
 	# Create a body with the centroid and start tracking it
 	def start_track(self, centroid):
@@ -37,9 +39,6 @@ class BodyTracker:
 	
 	# Updates the list of tracked bodies, pass in current frames's rectangles
 	def update(self, rectangles):
-		# The maximum distance a body can move between frames
-		max_dist = 100
-		
 		# print("Length of input", len(rectangles))
 		if len(rectangles) == 0:
 			# If nothing is input, increment disappeared time of all objects
@@ -99,7 +98,7 @@ class BodyTracker:
 			for (x, y) in min_coords:
 				if (x in remaining_x) and (y in remaining_y):
 					# print("Distance between", x, "and", y, "is", distance[x][y])
-					if distance[x][y] < max_dist:
+					if distance[x][y] < self.max_dist:
 						# Replace the existing centroid with the new input centroid with smallest distance
 						self.bodies[body_ids[x]].update_location(input_centroids[y])
 						# Reset the disappeared time
@@ -114,7 +113,7 @@ class BodyTracker:
 				# Increment disappeared time
 				self.disappearedTime[body_ids[x]] += 1
 				# Check if time value has exceeded limit
-				print(self.bodies[body_ids[x]].location, "Has disappeared")
+				print(self.bodies[body_ids[x]].location, self.bodies[body_ids[x]].ID, "Has disappeared")
 				if self.disappearedTime[body_ids[x]] > self.maxDisTime:
 					self.end_track(body_ids[x])
 			

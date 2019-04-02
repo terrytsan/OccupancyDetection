@@ -96,9 +96,10 @@ def draw_graphics(contours, image):
 	# Print out the number of people on board
 	cv2.putText(image, str(onTrain), (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0))
 
+
 # Finds contours in given input image
 def find_contours(input_image):
-	# Find contours
+	# Find contours (only outermost ones)
 	contours, hierarchy = cv2.findContours(input_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 	# Draw contours
 	drawing = np.zeros((input_image.shape[0], input_image.shape[1], 3), dtype=np.uint8)
@@ -109,30 +110,16 @@ def find_contours(input_image):
 	return drawing
 
 
-# Load the video
-cap = cv2.VideoCapture(video)
-
-# want to detect shadows so they can be thresholded
-subtractor = cv2.createBackgroundSubtractorMOG2(history=300, varThreshold=20, detectShadows=1)
-subtractorTwo = cv2.createBackgroundSubtractorKNN()
-
-# This kernel will be used with the background subtractor
-kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
-
-writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'MJPG'), 30, (402, 300))
-
-# Play the video
-while 1:
-	ret, frame = cap.read()
-	if not ret:
-		break
-	
-	# resize frame
-	frame = cv2.resize(frame, (0, 0), fx=videoScaleFactor, fy=videoScaleFactor)
+# Perform background subtraction on input frame
+def subtract_background(input_frame, subtractor_function):
+	# get dimensions of the window (fix positioning of the other windows)
+	blobX, blobY, blobW, blobH = cv2.getWindowImageRect('Original frame')
 	
 	# Background subtraction
-	foregroundMask = subtractor.apply(frame, None, -1)
+	foregroundMask = subtractor_function.apply(frame, None, -1)
+
 	# opening removes false positives (white dots in background - the noise)
+	kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
 	foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_OPEN, kernel)
 	# closing removes false negatives (black dots in actual object)
 	subKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
@@ -148,13 +135,7 @@ while 1:
 	# try and fill the gaps in objects
 	dilation = cv2.dilate(frameThresh, DKernel, iterations=4)  # makes things more pronounced
 	
-	# This section displays the frames
-	# show the two frames side by side (appears to be a video)
-	cv2.imshow('Original frame', frame)
-	cv2.moveWindow('Original frame', 0, 0)
-	# get dimensions of the window (fix positioning of the other windows
-	blobX, blobY, blobW, blobH = cv2.getWindowImageRect('Original frame')
-	
+	# Show the intermediate steps as windows
 	cv2.imshow('Blob frame', foregroundMask)
 	cv2.moveWindow('Blob frame', blobX + blobW, 0)
 	
@@ -164,7 +145,40 @@ while 1:
 	cv2.imshow('Dilation & Erosion', dilation)
 	cv2.moveWindow('Dilation & Erosion', blobX + blobW, + blobY + blobH)
 	
-	blurredDilation = cv2.GaussianBlur(dilation, (7, 7), 0)
+	return dilation
+
+
+# Load the video
+cap = cv2.VideoCapture(video)
+# cv.Flip(frame, flipMode=-1)
+
+# want to detect shadows so they can be thresholded
+subtractor = cv2.createBackgroundSubtractorMOG2(history=300, varThreshold=20, detectShadows=1)
+subtractorTwo = cv2.createBackgroundSubtractorKNN()
+
+
+
+writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'MJPG'), 30, (402, 300))
+
+# Play the video
+while 1:
+	ret, frame = cap.read()
+	if not ret:
+		break
+	
+	# resize frame
+	frame = cv2.resize(frame, (0, 0), fx=videoScaleFactor, fy=videoScaleFactor)
+	
+	subtracted_frame = subtract_background(frame, subtractor)
+	
+	# This section displays the frames
+	# show the two frames side by side (appears to be a video)
+	cv2.imshow('Original frame', frame)
+	cv2.moveWindow('Original frame', 0, 0)
+	# get dimensions of the window (fix positioning of the other windows
+	blobX, blobY, blobW, blobH = cv2.getWindowImageRect('Original frame')
+	
+	blurredDilation = cv2.GaussianBlur(subtracted_frame, (7, 7), 0)
 	cv2.imshow('Blurred Dilation', blurredDilation)
 	cv2.moveWindow('Blurred Dilation', blobX + (2 * blobW), 0)
 	
