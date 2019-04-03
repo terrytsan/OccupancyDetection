@@ -4,10 +4,10 @@ from BodyTracker import BodyTracker
 from Body import Body
 
 # constants
-video = "example_01.mp4"
-videoScaleFactor = 1
+video = "Marbles4 cropped.mp4"
+videoScaleFactor = 0.2
 # minimum size of rectangles before they are shown
-minRecSize = 3000
+minRecSize = 1200
 # y coord of the crossing line
 line_y = 150
 # Toggle writing output to file
@@ -116,14 +116,14 @@ def subtract_background(input_frame, subtractor_function):
 	blobX, blobY, blobW, blobH = cv2.getWindowImageRect('Original frame')
 	
 	# Background subtraction
-	foregroundMask = subtractor_function.apply(frame, None, -1)
+	foregroundMask = subtractor_function.apply(input_frame, None, -1)
 
 	# opening removes false positives (white dots in background - the noise)
-	kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
+	kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
 	foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_OPEN, kernel)
 	# closing removes false negatives (black dots in actual object)
-	subKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
-	foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_CLOSE, subKernel)
+	subKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+	#foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_CLOSE, subKernel)
 	
 	# threshold the frame - removes the random large changes
 	ret, frameThresh = cv2.threshold(foregroundMask, 200, 255, cv2.THRESH_TOZERO)
@@ -153,10 +153,12 @@ cap = cv2.VideoCapture(video)
 # cv.Flip(frame, flipMode=-1)
 
 # want to detect shadows so they can be thresholded
-subtractor = cv2.createBackgroundSubtractorMOG2(history=300, varThreshold=20, detectShadows=1)
+subtractor = cv2.createBackgroundSubtractorMOG2(history=10, varThreshold=20, detectShadows=1)
 subtractorTwo = cv2.createBackgroundSubtractorKNN()
-
-
+subtractor.setShadowThreshold(0.7)
+print("Shadow threshold:", subtractor.getShadowThreshold())
+subtractor.setBackgroundRatio(0.5)
+print("Background ratio:", subtractor.getBackgroundRatio())
 
 writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'MJPG'), 30, (402, 300))
 
@@ -168,9 +170,10 @@ while 1:
 	
 	# resize frame
 	frame = cv2.resize(frame, (0, 0), fx=videoScaleFactor, fy=videoScaleFactor)
-	
+	#frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+	frame = cv2.GaussianBlur(frame, (7, 7), 0)
+	# Perform background subtraction
 	subtracted_frame = subtract_background(frame, subtractor)
-	
 	# This section displays the frames
 	# show the two frames side by side (appears to be a video)
 	cv2.imshow('Original frame', frame)
