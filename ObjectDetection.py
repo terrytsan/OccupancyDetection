@@ -6,8 +6,6 @@ from Body import Body
 # constants
 video = "Marbles4 cropped.mp4"
 videoScaleFactor = 0.2
-# minimum size of rectangles before they are shown (about to be removed)
-minRecSize = 1200
 # minimum area of contour before they are considered
 minArea = 800
 # y coord of the crossing line
