@@ -6,8 +6,10 @@ from Body import Body
 # constants
 video = "Marbles4 cropped.mp4"
 videoScaleFactor = 0.2
-# minimum size of rectangles before they are shown
+# minimum size of rectangles before they are shown (about to be removed)
 minRecSize = 1200
+# minimum area of contour before they are considered
+minArea = 800
 # y coord of the crossing line
 line_y = 150
 # Toggle writing output to file
@@ -22,11 +24,10 @@ onTrain = 0
 
 # Return boolean, if line is crossed. True if line has been crossed. Requires y coord of line.
 def line_crossed(body):
-	
 	# Skip check if there is no previous points (first frame body appears in)
 	if len(body.visited) <= 1:
 		return False
-
+	
 	# If the direction is down
 	if body.direction == 0:
 		# If the previous location_y is less than(<=) line_y AND current_y is greater than line_y
@@ -42,29 +43,30 @@ def line_crossed(body):
 	return False
 
 
-# Draws a bounding box around each contour (of a minimum area) and show on the input image
-def draw_graphics(contours, image):
+# Draws the contours, bounding box, and text on inputted image
+def draw_graphics(contours, input_image):
 	# Declare that we will use this variable is global
 	global onTrain
+	# Draw the contours
+	contour_color = (256, 0, 250)
+	cv2.drawContours(input_image, contours, -1, contour_color, cv2.LINE_4)
 	# holds all the rectangles (to be passed into the object tracker)
 	rectangles = []
 	rect_count = 0
+	# Approximate a bounding rectangle around each contour
 	for c in contours:
-		# Approximate a bounding rectangle around the contour
 		x, y, w, h = cv2.boundingRect(c)
-		# Only draw rectangles larger than minimumRecSize
-		if (w * h) > minRecSize:
-			rect_count = rect_count + 1
-			# draw the rectangle on the passed in image
-			cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-			rectangles.append([x, y, x + w, y + h])
-			# Print the size of the rectangle next to the rectangle
-			cv2.putText(image, str(w * h), (x - 1, y - 1), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
+		rect_count = rect_count + 1
+		# draw the rectangle on the passed in image
+		cv2.rectangle(input_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+		rectangles.append([x, y, x + w, y + h])
+		# Print the area of the contour next to the rectangle
+		cv2.putText(input_image, str(cv2.contourArea(c)), (x - 1, y - 1), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 	# Get a list of tracked objects
 	tracked_bodies = bodTrack.update(rectangles)
 	
 	# Draw the crossing line
-	cv2.line(image, (0, line_y), (500, line_y), (0, 255, 0), 3)
+	cv2.line(input_image, (0, line_y), (500, line_y), (0, 255, 0), 3)
 	
 	# Write text on the centroid
 	for (ID, body) in tracked_bodies.items():
@@ -77,37 +79,41 @@ def draw_graphics(contours, image):
 			direction = "up"
 		
 		if line_crossed(body):
-			cv2.putText(image, "line crossed", (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
+			cv2.putText(input_image, "line crossed", (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 			# If direction is down (leaving)
 			if body.direction == 0:
 				onTrain -= 1
 			# If direction is up (boarding)
 			if body.direction == 1:
 				onTrain += 1
-			
+		
 		trackedObjectText = ("ID: %s %s" % (ID, direction))
-		cv2.putText(image, (trackedObjectText), (body_x - 10, body_y - 10),
+		cv2.putText(input_image, (trackedObjectText), (body_x - 10, body_y - 10),
 					cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 2)
 		# rectangle indicating centroid
-		cv2.rectangle(image, (body_x, body_y - 1), (body_x + 1, body_y + 1), (0, 255, 0), 2)
+		cv2.rectangle(input_image, (body_x, body_y - 1), (body_x + 1, body_y + 1), (0, 255, 0), 2)
 	# Print out the number of rectangles in current frame
-	cv2.putText(image, str(rect_count), (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
-
+	cv2.putText(input_image, str(rect_count), (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
+	
 	# Print out the number of people on board
-	cv2.putText(image, str(onTrain), (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0))
+	cv2.putText(input_image, str(onTrain), (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0))
+	
+	return input_image
 
 
 # Finds contours in given input image
 def find_contours(input_image):
+	# Declare this variable as global
+	global minArea
+	# Array to hold contours meeting minimum area
+	reduced_contours = []
 	# Find contours (only outermost ones)
 	contours, hierarchy = cv2.findContours(input_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-	# Draw contours
-	drawing = np.zeros((input_image.shape[0], input_image.shape[1], 3), dtype=np.uint8)
-	color = (256, 0, 250)
-	cv2.drawContours(drawing, contours, -1, color, cv2.LINE_4)
-	# Draw bounding rectangles
-	draw_graphics(contours, drawing)
-	return drawing
+	# Go through each contour keeping ones that meet minArea
+	for c in contours:
+		if cv2.contourArea(c) > minArea:
+			reduced_contours.append(c)
+	return reduced_contours
 
 
 # Perform background subtraction on input frame
@@ -117,13 +123,13 @@ def subtract_background(input_frame, subtractor_function):
 	
 	# Background subtraction
 	foregroundMask = subtractor_function.apply(input_frame, None, -1)
-
+	
 	# opening removes false positives (white dots in background - the noise)
 	kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
 	foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_OPEN, kernel)
 	# closing removes false negatives (black dots in actual object)
 	subKernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
-	#foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_CLOSE, subKernel)
+	# foregroundMask = cv2.morphologyEx(foregroundMask, cv2.MORPH_CLOSE, subKernel)
 	
 	# threshold the frame - removes the random large changes
 	ret, frameThresh = cv2.threshold(foregroundMask, 200, 255, cv2.THRESH_TOZERO)
@@ -170,7 +176,7 @@ while 1:
 	
 	# resize frame
 	frame = cv2.resize(frame, (0, 0), fx=videoScaleFactor, fy=videoScaleFactor)
-	#frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+	# frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 	frame = cv2.GaussianBlur(frame, (7, 7), 0)
 	# Perform background subtraction
 	subtracted_frame = subtract_background(frame, subtractor)
@@ -185,7 +191,11 @@ while 1:
 	cv2.imshow('Blurred Dilation', blurredDilation)
 	cv2.moveWindow('Blurred Dilation', blobX + (2 * blobW), 0)
 	
-	cv2.imshow('Contours', find_contours(blurredDilation))
+	# Get the contours in the image
+	found_contours = find_contours(blurredDilation)
+	
+	blank_image = np.zeros((frame.shape[0], frame.shape[1], 3), dtype=np.uint8)
+	cv2.imshow('Contours', draw_graphics(found_contours, frame))
 	cv2.moveWindow('Contours', blobX + (2 * blobW), blobY + blobH)
 	
 	if writeToFile:
