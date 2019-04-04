@@ -11,7 +11,7 @@ minArea = 800
 # y coord of the crossing line
 line_y = 150
 # Toggle writing output to file
-writeToFile = False
+writeToFile = True
 
 # Create an object tracker object
 bodTrack = BodyTracker()
@@ -164,7 +164,9 @@ print("Shadow threshold:", subtractor.getShadowThreshold())
 subtractor.setBackgroundRatio(0.5)
 print("Background ratio:", subtractor.getBackgroundRatio())
 
-writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'MJPG'), 30, (402, 300))
+w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'MJPG'), 30, (int(w * videoScaleFactor), int(h * videoScaleFactor)))
 
 # Play the video
 while 1:
@@ -197,7 +199,7 @@ while 1:
 	cv2.moveWindow('Contours', blobX + (2 * blobW), blobY + blobH)
 	
 	if writeToFile:
-		writer.write(find_contours(blurredDilation).astype('uint8'))
+		writer.write(draw_graphics(found_contours, frame).astype('uint8'))
 	
 	# was 15 before
 	if cv2.waitKey(40) == 13:
