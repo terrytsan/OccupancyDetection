@@ -5,11 +5,11 @@ from Body import Body
 
 # constants
 video = "Marbles4 cropped.mp4"
+#video = "marbles5.mp4"
 videoScaleFactor = 0.2
+# videoScaleFactor = 1
 # minimum area of contour before they are considered
 minArea = 800
-# y coord of the crossing line
-line_y = 150
 # Toggle writing output to file
 writeToFile = True
 
@@ -167,6 +167,8 @@ print("Background ratio:", subtractor.getBackgroundRatio())
 w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'MJPG'), 30, (int(w * videoScaleFactor), int(h * videoScaleFactor)))
+# Set the line to be half way
+line_y = int((h * videoScaleFactor * 0.5))
 
 # Play the video
 while 1:
