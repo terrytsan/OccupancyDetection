@@ -1,3 +1,4 @@
+import logging
 import cv2
 import numpy as np
 from BodyTracker import BodyTracker
@@ -19,6 +20,20 @@ bodTrack = BodyTracker()
 # Number of people on the train
 onTrain = 0
 
+# Logging config. Disable with logging.CRITICAL
+# Create logger
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+# Create console handler
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+# Create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(handler)
+# End of logging config
+
 
 # Return boolean, if line is crossed. True if line has been crossed. Requires y coord of line.
 def line_crossed(body):
@@ -31,12 +46,14 @@ def line_crossed(body):
 		# If the previous location_y is less than(<=) line_y AND current_y is greater than line_y
 		if body.visited[-2][1] <= line_y < body.location[1]:
 			# Line has been crossed
+			logger.info(f"{body.ID} has crossed the line (down)")
 			return True
 	# If the direction is up
 	if body.direction == 1:
 		# If the previous location_y is greater(>=) than line_y AND current_y is less than line_y
 		if body.visited[-2][1] >= line_y > body.location[1]:
 			# Line has been crossed
+			logger.info(f"{body.ID} has crossed the line (up)")
 			return True
 	return False
 
@@ -160,9 +177,9 @@ cap = cv2.VideoCapture(video)
 subtractor = cv2.createBackgroundSubtractorMOG2(history=10, varThreshold=20, detectShadows=1)
 subtractorTwo = cv2.createBackgroundSubtractorKNN()
 subtractor.setShadowThreshold(0.7)
-print("Shadow threshold:", subtractor.getShadowThreshold())
+logger.debug(f"Shadow threshold: {subtractor.getShadowThreshold()}")
 subtractor.setBackgroundRatio(0.5)
-print("Background ratio:", subtractor.getBackgroundRatio())
+logger.debug(f"Background ratio: {subtractor.getBackgroundRatio()}")
 
 w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))

@@ -3,6 +3,9 @@
 from scipy.spatial import distance as dist
 import numpy as np
 from Body import Body
+import logging
+# Logging configuration
+logger = logging.getLogger(__name__)
 
 
 class BodyTracker:
@@ -17,6 +20,8 @@ class BodyTracker:
 		self.maxDisTime = 10
 		# The maximum distance a body can move between frames
 		self.max_dist = 150
+		
+		logger.info("hello")
 	
 	# Create a body with the centroid and start tracking it
 	def start_track(self, centroid):
@@ -25,7 +30,7 @@ class BodyTracker:
 		# Add the new body to the list of bodies
 		self.bodies[self.currentBodyID] = body
 		
-		print("Registered", self.bodies[self.currentBodyID].location, "as", self.bodies[self.currentBodyID].ID)
+		logger.info(f"Registered {self.bodies[self.currentBodyID].location} as {self.bodies[self.currentBodyID].ID}")
 		# Initialise a disappearedTime for the new body
 		self.disappearedTime[self.currentBodyID] = 0
 		# Increment the ID
@@ -113,8 +118,9 @@ class BodyTracker:
 				# Increment disappeared time
 				self.disappearedTime[body_ids[x]] += 1
 				# Check if time value has exceeded limit
-				print(self.bodies[body_ids[x]].location, self.bodies[body_ids[x]].ID, "Has disappeared")
+				logging.info(f"{self.bodies[body_ids[x]].location} {self.bodies[body_ids[x]].ID}. time till disapeared: {self.disappearedTime[body_ids[x]]}")
 				if self.disappearedTime[body_ids[x]] > self.maxDisTime:
+					logging.info(f"{self.bodies[body_ids[x]].location} {self.bodies[body_ids[x]].ID} has disappeared")
 					self.end_track(body_ids[x])
 			
 			# Go through the remaining input centroids that weren't matched and register them as new objects

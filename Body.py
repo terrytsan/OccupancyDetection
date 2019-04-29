@@ -10,11 +10,7 @@ class Body:
 		
 		self.crossedLine = False
 		# Flag indicates if the body has crossed the line
-	
-	# Test function
-	def print_something(self):
-		print("Hello, made it into the body")
-	
+		
 	# Determine the direction (based on overall movement across frame)
 	def determine_direction(self):
 		# go through each of the locations
