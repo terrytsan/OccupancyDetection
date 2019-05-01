@@ -169,8 +169,8 @@ def subtract_background(input_frame, subtractor_function):
 	cv2.imshow('Threshold', frameThresh)
 	cv2.moveWindow('Threshold', blobX + (2 * blobW), 0)
 	
-	cv2.imshow('Dilation & Erosion', dilation)
-	cv2.moveWindow('Dilation & Erosion', blobX + blobW, + blobY + blobH)
+	# cv2.imshow('Dilation & Erosion', dilation)
+	# cv2.moveWindow('Dilation & Erosion', blobX + blobW, + blobY + blobH)
 	
 	return dilation
 
@@ -219,9 +219,15 @@ while 1:
 	# Get the contours in the image
 	found_contours = find_contours(blurredDilation)
 	
+	blurredDilation_contours = cv2.cvtColor(blurredDilation,cv2.COLOR_GRAY2BGR)
+	contour_color = (256, 0, 250)
+	blurredDilation_contours = cv2.drawContours(blurredDilation_contours, found_contours, -1, color=contour_color, thickness=cv2.LINE_4)
+	cv2.imshow('Contours', blurredDilation_contours)
+	cv2.moveWindow('Contours', blobX + blobW, + blobY + blobH)
+	
 	blank_image = np.zeros((frame.shape[0], frame.shape[1], 3), dtype=np.uint8)
-	cv2.imshow('Contours', draw_graphics(found_contours, frame))
-	cv2.moveWindow('Contours', blobX + (2 * blobW), blobY + blobH)
+	cv2.imshow('Final output', draw_graphics(found_contours, frame))
+	cv2.moveWindow('Final output', blobX + (2 * blobW), blobY + blobH)
 	
 	if writeToFile:
 		writer.write(draw_graphics(found_contours, frame).astype('uint8'))
