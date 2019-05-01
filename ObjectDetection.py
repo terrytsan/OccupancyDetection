@@ -5,9 +5,9 @@ from BodyTracker import BodyTracker
 from Body import Body
 
 # constants
-video = "Marbles4 cropped.mp4"
+video = "Test10.mp4"
 #video = "marbles5.mp4"
-videoScaleFactor = 0.2
+videoScaleFactor = 0.4
 # videoScaleFactor = 1
 # minimum area of contour before they are considered
 minArea = 800
@@ -18,7 +18,8 @@ writeToFile = True
 bodTrack = BodyTracker()
 
 # Number of people on the train
-onTrain = 0
+totalDown = 0
+totalUp = 0
 
 # Logging config. Disable with logging.CRITICAL
 # Create logger
@@ -61,7 +62,8 @@ def line_crossed(body):
 # Draws the contours, bounding box, and text on inputted image
 def draw_graphics(contours, input_image):
 	# Declare that we will use this variable is global
-	global onTrain
+	global totalUp
+	global totalDown
 	# Draw the contours
 	contour_color = (256, 0, 250)
 	cv2.drawContours(input_image, contours, -1, contour_color, cv2.LINE_4)
@@ -97,10 +99,10 @@ def draw_graphics(contours, input_image):
 			cv2.putText(input_image, "line crossed", (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 			# If direction is down (leaving)
 			if body.direction == 0:
-				onTrain -= 1
+				totalDown += 1
 			# If direction is up (boarding)
 			if body.direction == 1:
-				onTrain += 1
+				totalUp += 1
 		
 		trackedObjectText = ("ID: %s %s" % (ID, direction))
 		cv2.putText(input_image, (trackedObjectText), (body_x - 10, body_y - 10),
@@ -111,7 +113,11 @@ def draw_graphics(contours, input_image):
 	cv2.putText(input_image, str(rect_count), (50, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 	
 	# Print out the number of people on board
-	cv2.putText(input_image, str(onTrain), (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0))
+	totalUpText = ("Up: %s" % (totalUp))
+	totalDownText = ("Down: %s" % (totalDown))
+	cv2.putText(input_image, totalUpText, (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0))
+	cv2.putText(input_image, totalDownText, (200, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0))
+	
 	
 	return input_image
 
@@ -181,11 +187,11 @@ logger.debug(f"Shadow threshold: {subtractor.getShadowThreshold()}")
 subtractor.setBackgroundRatio(0.5)
 logger.debug(f"Background ratio: {subtractor.getBackgroundRatio()}")
 
-w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'MJPG'), 30, (int(w * videoScaleFactor), int(h * videoScaleFactor)))
+frame_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+frame_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'MJPG'), 30, (int(frame_w * videoScaleFactor), int(frame_h * videoScaleFactor)))
 # Set the line to be half way
-line_y = int((h * videoScaleFactor * 0.5))
+line_y = int((frame_h * videoScaleFactor * 0.5))
 
 # Play the video
 while 1:
@@ -196,9 +202,9 @@ while 1:
 	# resize frame
 	frame = cv2.resize(frame, (0, 0), fx=videoScaleFactor, fy=videoScaleFactor)
 	# frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-	frame = cv2.GaussianBlur(frame, (7, 7), 0)
+	blurred_frame = cv2.GaussianBlur(frame, (7, 7), 0)
 	# Perform background subtraction
-	subtracted_frame = subtract_background(frame, subtractor)
+	subtracted_frame = subtract_background(blurred_frame, subtractor)
 	# This section displays the frames
 	# show the two frames side by side (appears to be a video)
 	cv2.imshow('Original frame', frame)
