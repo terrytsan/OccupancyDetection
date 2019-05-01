@@ -46,7 +46,7 @@ class BodyTracker:
 	def update(self, rectangles):
 		if len(rectangles) == 0:
 			# If nothing is input, increment disappeared time of all objects
-			# print("Nothing input")
+			logger.debug("Nothing input")
 			for bodyID in list(self.bodies.keys()):
 				self.disappearedTime[bodyID] += 1
 				if self.disappearedTime[bodyID] > self.maxDisTime:
@@ -67,7 +67,7 @@ class BodyTracker:
 		# If there are currently no tracked objects
 		if len(self.bodies) == 0:
 			# print("No objects, adding", len(rectangles))
-			logging.debug(f"No objects, adding: {len(rectangles)}")
+			logger.debug(f"No objects, adding: {len(rectangles)}")
 			for centroid in input_centroids:
 				# Start tracking all inputted rectangles
 				self.start_track(centroid)
