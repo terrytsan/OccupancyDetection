@@ -44,7 +44,6 @@ class BodyTracker:
 	
 	# Updates the list of tracked bodies, pass in current frames's rectangles
 	def update(self, rectangles):
-		# print("Length of input", len(rectangles))
 		if len(rectangles) == 0:
 			# If nothing is input, increment disappeared time of all objects
 			# print("Nothing input")
@@ -68,6 +67,7 @@ class BodyTracker:
 		# If there are currently no tracked objects
 		if len(self.bodies) == 0:
 			# print("No objects, adding", len(rectangles))
+			logging.debug(f"No objects, adding: {len(rectangles)}")
 			for centroid in input_centroids:
 				# Start tracking all inputted rectangles
 				self.start_track(centroid)
@@ -82,7 +82,7 @@ class BodyTracker:
 			
 			# Calculate distances between each centroid
 			distance = dist.cdist(np.array(existing_centroids), input_centroids)
-			#print("distance array:\n", distance, "\n")
+			logger.debug(f"distance array:\n {distance} \n")
 			
 			# Gets the index of the shortest distance in each row and then orders them in ascending order.
 			# Each entry represents the index of input centroid with the shortest distance to the corresponding
@@ -102,7 +102,6 @@ class BodyTracker:
 			# Go through each row coord and assign bodies[row] with with a new coordinate (the input centroid)
 			for (x, y) in min_coords:
 				if (x in remaining_x) and (y in remaining_y):
-					# print("Distance between", x, "and", y, "is", distance[x][y])
 					if distance[x][y] < self.max_dist:
 						# Replace the existing centroid with the new input centroid with smallest distance
 						self.bodies[body_ids[x]].update_location(input_centroids[y])

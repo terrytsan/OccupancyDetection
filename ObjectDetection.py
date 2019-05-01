@@ -5,7 +5,7 @@ from BodyTracker import BodyTracker
 from Body import Body
 
 # constants
-video = "Test10.mp4"
+video = "example_01.mp4"
 #video = "marbles5.mp4"
 videoScaleFactor = 0.4
 # videoScaleFactor = 1
@@ -24,7 +24,7 @@ totalUp = 0
 # Logging config. Disable with logging.CRITICAL
 # Create logger
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 # Create console handler
 handler = logging.StreamHandler()
 handler.setLevel(logging.DEBUG)
