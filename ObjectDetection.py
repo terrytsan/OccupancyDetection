@@ -167,7 +167,7 @@ def subtract_background(input_frame, subtractor_function):
 	cv2.moveWindow('Blob frame', blobX + blobW, 0)
 	
 	cv2.imshow('Threshold', frameThresh)
-	cv2.moveWindow('Threshold', 0, + blobY + blobH)
+	cv2.moveWindow('Threshold', blobX + (2 * blobW), 0)
 	
 	cv2.imshow('Dilation & Erosion', dilation)
 	cv2.moveWindow('Dilation & Erosion', blobX + blobW, + blobY + blobH)
@@ -214,7 +214,7 @@ while 1:
 	
 	blurredDilation = cv2.GaussianBlur(subtracted_frame, (7, 7), 0)
 	cv2.imshow('Blurred Dilation', blurredDilation)
-	cv2.moveWindow('Blurred Dilation', blobX + (2 * blobW), 0)
+	cv2.moveWindow('Blurred Dilation', 0, + blobY + blobH)
 	
 	# Get the contours in the image
 	found_contours = find_contours(blurredDilation)
