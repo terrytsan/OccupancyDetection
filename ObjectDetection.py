@@ -117,7 +117,6 @@ def draw_graphics(contours, input_image):
 	cv2.putText(input_image, totalUpText, (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0))
 	cv2.putText(input_image, totalDownText, (200, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 0))
 	
-	
 	return input_image
 
 
