@@ -96,7 +96,6 @@ def draw_graphics(contours, input_image):
 			direction = "up"
 		
 		if line_crossed(body):
-			cv2.putText(input_image, "line crossed", (100, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0))
 			# If direction is down (leaving)
 			if body.direction == 0:
 				totalDown += 1
